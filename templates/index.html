@@ -1,0 +1,250 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Sistema POS - Frutas</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.7.2/font/bootstrap-icons.css" rel="stylesheet">
+    <style>
+        :root {
+            --background-color: #1c1c1e;
+            --text-color: #f5f5f7;
+            --card-bg-color: #2c2c2e;
+            --card-hover-color: #3a3a3c;
+            --button-color: #333333;
+            --button-hover-color: #444444;
+            --button-text-color: #ffffff;
+        }
+
+        body {
+            background-color: var(--background-color);
+            color: var(--text-color);
+            margin: 0; /* Elimina márgenes en el body */
+            padding: 0;
+        }
+
+        .product-grid, .cart-section {
+            height: calc(100vh - 20px);
+        }
+
+        .product-grid {
+            overflow-y: auto;
+        }
+
+        .cart-section {
+            box-shadow: -2px 0 10px rgba(0, 0, 0, 0.5);
+            padding: 2rem;
+        }
+
+        .product-card {
+            transition: transform 0.2s, background-color 0.2s;
+            background-color: var(--card-bg-color);
+            border: none;
+            border-radius: 10px;
+        }
+
+        .product-card:hover {
+            transform: translateY(-5px);
+            background-color: var(--card-hover-color);
+        }
+
+        .product-image {
+            height: 200px;
+            object-fit: cover;
+            border-radius: 10px 10px 0 0;
+        }
+
+        .cart-items {
+            max-height: 400px;
+            overflow-y: auto;
+            margin-bottom: 1.5rem;
+        }
+
+        .btn-lg {
+            background-color: var(--button-color);
+            color: var(--button-text-color);
+            font-size: 1.2rem;
+            font-weight: bold;
+            border: none;
+            padding: 1rem;
+            border-radius: 8px;
+            transition: background-color 0.3s, transform 0.2s;
+        }
+
+        .btn-lg:hover {
+            background-color: var(--button-hover-color);
+            transform: scale(1.05);
+        }
+
+        .btn-lg:focus {
+            outline: none;
+            box-shadow: 0 0 5px var(--button-color);
+        }
+
+        .cart-section h4 {
+            color: var(--text-color);
+        }
+
+        .modal-content {
+            background-color: var(--card-bg-color);
+            color: var(--text-color);
+            border-radius: 10px;
+        }
+
+        .modal-header {
+            border-bottom: 1px solid #444;
+        }
+
+        .modal-footer {
+            border-top: 1px solid #444;
+        }
+
+        .modal-title {
+            font-weight: bold;
+        }
+
+        .btn-close {
+            filter: invert(1);
+        }
+    </style>
+</head>
+<body>
+    <div class="container-fluid">
+        <div class="row">
+            <!-- Productos -->
+            <div class="col-md-8 product-grid p-4">
+                <div class="row g-4">
+                    {% for producto in productos %}
+                    <div class="col-md-4">
+                        <div class="card product-card h-100" 
+                             onclick="mostrarModal({{ producto.id }}, '{{ producto.nombre }}', {{ producto.precio }})">
+                            <div class="product-image-container">
+                                <img src="{{ producto.imagen }}" 
+                                     class="product-image w-100" 
+                                     alt="{{ producto.nombre }}">
+                            </div>
+                            <div class="card-body">
+                                <h5 class="card-title text-light">{{ producto.nombre }}</h5>
+                                <p class="card-text text-success">${{ producto.precio }} por kg</p>
+                            </div>
+                        </div>
+                    </div>
+                    {% endfor %}
+                </div>
+            </div>
+
+            <!-- Carrito -->
+            <!--  -->
+
+                    <div class="col-md-4 cart-section">
+                        <div class="d-flex justify-content-between align-items-center">
+                            <h4><i class="bi bi-cart3"></i> Carrito</h4>
+                        </div>                        
+                        <div class="cart-items">
+                            {% for item in session.get("carrito", []) %}
+                            <div class="card bg-dark text-light mb-2">
+                                <div class="card-body py-2">
+                                    <div class="d-flex justify-content-between align-items-center">
+                                        <div>
+                                            <h6 class="mb-0">{{ item.nombre }}</h6>
+                                            <small>${{ item.precio_unitario }} x {{ item.peso }}kg</small>
+                                        </div>
+                                        <span class="text-success">${{ "%.2f"|format(item.total) }}</span>
+                                    </div>
+                                </div>
+                            </div>
+                            {% endfor %}
+                        </div>
+
+                <!-- Total y Botón de Pago -->
+                <div class="mt-auto">
+                    <div class="mb-1 border-top pt-3">
+                        <h3 class="d-flex justify-content-between">
+                            <span>Total:</span>
+                            <span class="text-success">
+                                ${{ "%.2f"|format(session.get("carrito", [])|sum(attribute="total")) }}
+                            </span>
+                        </h3>
+                    </div>
+                
+                    <div class="row g-2">
+                        <div class="col-4">
+                            <button class="btn btn-primary btn-lg w-100">Pagar</button>
+                        </div>
+                        <div class="col-4">
+                            <button class="btn btn-secondary btn-lg w-100">Caja</button>
+                        </div>
+                        <div class="col-4">
+                            <a href="{{ url_for('limpiar_carrito') }}" class="btn btn-success btn-lg w-100">Limpiar</a>
+                        </div>                        
+                        <div class="col-4">
+                            <button class="btn btn-warning btn-lg w-100">Opción 2</button>
+                        </div>
+                        <div class="col-4">
+                            <button class="btn btn-info btn-lg w-100">Opción 3</button>
+                        </div>
+                        <div class="col-4">
+                            <button class="btn btn-danger btn-lg w-100">Opción 4</button>
+                        </div>
+                    </div>
+                </div>                
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal de confirmación -->
+    <div class="modal fade" id="confirmModal" tabindex="-1">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">Confirmar Agregar al Carrito</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <p><strong>Producto:</strong> <span id="modal-producto"></span></p>
+                    <p><strong>Peso:</strong> {{ peso_fijo }} kg</p>
+                    <p><strong>Precio Unitario:</strong> $<span id="modal-precio-unitario"></span></p>
+                    <p><strong>Total:</strong> $<span id="modal-total"></span></p>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+                    <button type="button" class="btn btn-primary" id="confirmarAgregar">Confirmar</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <script>
+        let formSeleccionado;
+        const PESO_FIJO = {{ peso_fijo }};
+
+        function mostrarModal(id, nombre, precio) {
+            formSeleccionado = document.createElement('form');
+            formSeleccionado.method = "POST";
+            formSeleccionado.action = "{{ url_for('agregar') }}";
+
+            const inputId = document.createElement('input');
+            inputId.type = "hidden";
+            inputId.name = "id";
+            inputId.value = id;
+            formSeleccionado.appendChild(inputId);
+
+            document.getElementById('modal-producto').textContent = nombre;
+            document.getElementById('modal-precio-unitario').textContent = precio;
+            document.getElementById('modal-total').textContent = (precio * PESO_FIJO).toFixed(2);
+
+            const modal = new bootstrap.Modal(document.getElementById('confirmModal'));
+            modal.show();
+        }
+
+        document.getElementById('confirmarAgregar').addEventListener('click', function() {
+            if (formSeleccionado) {
+                document.body.appendChild(formSeleccionado);
+                formSeleccionado.submit();
+            }
+        });
+    </script>
+</body>
+</html>
