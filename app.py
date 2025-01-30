@@ -1,6 +1,7 @@
 from flask import Flask, render_template, session, redirect, url_for, request
 app = Flask(__name__)
 app.secret_key = "una_clave_secreta"
+from utils.utils import comunicacion_balanza_simulada
 
 # Variable de peso fijo
 PESO_FIJO = float(2.5)
@@ -59,14 +60,14 @@ productos = [
 
 @app.route("/")
 def index():
-    return render_template("index.html", productos=productos, peso_fijo=PESO_FIJO)
+    return render_template("index.html", productos=productos, peso_fijo=float(comunicacion_balanza_simulada()))
 
 @app.route("/agregar", methods=["POST"])
 def agregar():
     producto_id = int(request.form["id"])
     
     # Usar el peso fijo en lugar del formulario
-    peso = PESO_FIJO
+    peso = float(comunicacion_balanza_simulada())
 
     if "carrito" not in session:
         session["carrito"] = []
